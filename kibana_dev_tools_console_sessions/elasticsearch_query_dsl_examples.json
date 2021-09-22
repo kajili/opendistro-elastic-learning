@@ -5,8 +5,6 @@ PUT employees
 
 GET employees
 
-DELETE employees
-
 PUT employees/_mapping
 {
   "properties": {
@@ -339,7 +337,40 @@ POST employees/_search
     }
   }
 }
-
+GET employees/_search
+{
+"_source": ["position","phrase"],
+"query": {
+"function_score": {
+"query": {
+"match": {
+"position": "manager"
+}
+},
+"functions": [
+{
+"filter": {
+"match": {
+"phrase": "coherent"
+}
+},
+"weight": 2
+},
+{
+"filter": {
+"match": {
+"phrase": "emulation"
+}
+},
+"weight": 10
+}
+],
+"score_mode": "multiply",
+"boost": "5",
+"boost_mode": "multiply"
+}
+}
+}
 POST employees/_search
 {
   "query": {
@@ -393,3 +424,500 @@ GET employees/_search
     }
   ]
 }
+
+GET employees/_search
+{
+  "_source": [
+    "name",
+    "experience",
+    "salary"
+  ],
+  "sort": [
+    {
+      "experience": {
+        "order": "desc"
+      }
+    },
+    {
+      "salary": {
+        "order": "desc"
+      }
+    }
+  ]
+}
+
+GET employees/_search
+{
+  "_source": [
+    "name",
+    "experience",
+    "salary"
+  ],
+  "sort": [
+    {
+      "salary": {
+        "order": "desc"
+      }
+    },
+    {
+      "experience": {
+        "order": "desc"
+      }
+    }
+  ]
+}
+
+# Compound Queries
+POST employees/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "match": {
+            "position": "manager"
+          }
+        },
+        {
+          "range": {
+            "experience": {
+              "gte": 12
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+
+POST employees/_search
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "match": {
+            "position": "manager"
+          }
+        },
+        {
+          "range": {
+            "experience": {
+              "gte": 12
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+
+POST employees/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "match": {
+            "position": "manager"
+          }
+        },
+        {
+          "range": {
+            "experience": {
+              "gte": 12
+            }
+          }
+        }
+      ],
+      "should": [
+        {
+          "match": {
+            "phrase": "versatile"
+          }
+        }
+      ]
+    }
+  }
+}
+
+POST employees/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "bool": {
+            "should": [
+              {
+                "match": {
+                  "company": "Talane"
+                }
+              },
+              {
+                "match": {
+                  "company": "Yamaha"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "bool": {
+            "should": [
+              {
+                "match": {
+                  "position": "manager"
+                }
+              },
+              {
+                "match": {
+                  "position": "Associate"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "bool": {
+            "must": [
+              {
+                "range": {
+                  "salary": {
+                    "gte": 100000
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}
+
+POST employees/_search
+{
+  "query": {
+    "boosting": {
+      "positive": {
+        "match": {
+          "country": "china"
+        }
+      },
+      "negative": {
+        "match": {
+          "company": "Talane"
+        }
+      },
+      "negative_boost": 0.5
+    }
+  }
+}
+
+GET employees/_search
+{
+  "query": {
+    "boosting": {
+      "positive": {
+        "bool": {
+          "should": [
+            {
+              "match": {
+                "country": {
+                  "query": "china"
+                }
+              }
+            },
+            {
+              "range": {
+                "experience": {
+                  "gte": 10
+                }
+              }
+            }
+          ]
+        }
+      },
+      "negative": {
+        "match": {
+          "gender": "female"
+        }
+      },
+      "negative_boost": 0.5
+    }
+  }
+}
+
+GET employees/_search
+{
+  "_source": [
+    "position",
+    "phrase"
+  ],
+  "query": {
+    "function_score": {
+      "query": {
+        "match": {
+          "position": "manager"
+        }
+      },
+      "functions": [
+        {
+          "filter": {
+            "match": {
+              "phrase": "coherent"
+            }
+          },
+          "weight": 2
+        },
+        {
+          "filter": {
+            "match": {
+              "phrase": "emulation"
+            }
+          },
+          "weight": 10
+        }
+      ],
+      "score_mode": "multiply",
+      "boost": "5",
+      "boost_mode": "multiply"
+    }
+  }
+}
+
+GET employees/_search
+{
+  "_source": [
+    "name",
+    "experience",
+    "salary"
+  ],
+  "query": {
+    "function_score": {
+      "query": {
+        "match_all": {}
+      },
+      "functions": [
+        {
+          "script_score": {
+            "script": {
+              "source": "(doc['salary'].value/doc['experience'].value)/1000"
+            }
+          }
+        }
+      ],
+      "boost_mode": "replace"
+    }
+  }
+}
+
+GET employees/_search
+{
+  "_source": [
+    "name",
+    "experience"
+  ],
+  "query": {
+    "function_score": {
+      "field_value_factor": {
+        "field": "experience",
+        "factor": 0.5,
+        "modifier": "square",
+        "missing": 1
+      }
+    }
+  }
+}
+
+GET employees/_search
+{
+  "_source": [
+    "name",
+    "salary"
+  ],
+  "query": {
+    "function_score": {
+      "query": {
+        "match_all": {}
+      },
+      "functions": [
+        {
+          "gauss": {
+            "salary": {
+              "origin": 200000,
+              "scale": 30000
+            }
+          }
+        }
+      ],
+      "boost_mode": "replace"
+    }
+  }
+}
+
+# Parent Child Queries
+PUT post-comments
+{
+  "mappings": {
+    "properties": {
+      "document_type": {
+        "type": "join",
+        "relations": {
+          "post": "comment"
+        }
+      }
+    }
+  }
+}
+
+
+PUT post-comments/_doc/1
+{
+  "document_type": {
+    "name": "post"
+  },
+  "post_title": "Angel Has Fallen"
+}
+
+
+PUT post-comments/_doc/2
+{
+  "document_type": {
+    "name": "post"
+  },
+  "post_title": "Beauty and the beast - a nice movie"
+}
+
+PPUT post-comments/_doc/A?routing=1
+{
+  "document_type": {
+    "name": "comment",
+    "parent": "1"
+  },
+  "comment_author": "Neil Soans",
+  "comment_description": "'Angel has Fallen' has some redeeming qualities, but they're too few and far in between to justify its existence"
+}
+
+PUT post-comments/_doc/B?routing=1
+{
+  "document_type": {
+    "name": "comment",
+    "parent": "1"
+  },
+  "comment_author": "Exiled Universe",
+  "comment_description": "Best in the trilogy! This movie wasn't better than the Rambo movie but it was very very close."
+}
+
+PUT post-comments/_doc/D?routing=1
+{
+  "document_type": {
+    "name": "comment",
+    "parent": "2"
+  },
+  "comment_author": "Emma Cochrane",
+  "comment_description": "There's the sublime beauty of a forgotten world and the promise of happily-ever-after to draw you to one of your favourite fairy tales, once again. Give it an encore."
+}
+
+PUT post-comments/_doc/E?routing=1
+{
+  "document_type": {
+    "name": "comment",
+    "parent": "2"
+  },
+  "comment_author": "Common Sense Media Editors",
+  "comment_description": "Stellar music, brisk storytelling, delightful animation, and compelling characters make this both a great animated feature for kids and a great movie for anyone"
+}
+
+
+GET post-comments/_search
+{
+  "query": {
+    "has_child": {
+      "type": "comment",
+      "query": {
+        "match": {
+          "comment_description": "music"
+        }
+      }
+    }
+  }
+}
+
+
+GET post-comments/_search
+{
+  "query": {
+    "has_parent": {
+      "parent_type": "post",
+      "query": {
+        "match": {
+          "post_title": "Beauty"
+        }
+      }
+    }
+  }
+}
+
+
+GET post-comments/_search?pretty
+{
+  "query": {
+    "has_child": {
+      "type": "comment",
+      "query": {
+        "match_all": {}
+      },
+      "inner_hits": {}
+    }
+  }
+}
+
+
+GET post-comments/_search?pretty
+{
+  "query": {
+    "has_parent": {
+      "parent_type": "post",
+      "query": {
+        "match_all": {}
+      },
+      "inner_hits": {}
+    }
+  }
+}
+
+
+POST employees/_search
+{
+  "query": {
+    "query_string": {
+      "query": "(roots heuristic systems) OR (enigneer~) OR (salary:(>=10000 AND <=52000)) ",
+      "fields": [
+        "position",
+        "phrase^3"
+      ]
+    }
+  }
+}
+
+POST employees/_search
+{
+  "query": {
+    "simple_query_string": {
+      "query": "(roots) | (resources manager) + (male) ",
+      "fields": [
+        "gender",
+        "position",
+        "phrase^3"
+      ]
+    }
+  }
+}
+
+GET _cat/indices?pretty
+
+DELETE employees
+
+DELETE post-comments
