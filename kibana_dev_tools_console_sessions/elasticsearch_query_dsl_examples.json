@@ -31,6 +31,7 @@ POST _bulk
 
 GET employees/_search
 
+# Match Query
 POST employees/_search
 {
   "query": {
@@ -77,4 +78,318 @@ POST employees/_search
   }
 }
 
+POST employees/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "research help",
+      "fields": [
+        "position",
+        "phrase"
+      ]
+    }
+  }
+}
 
+GET employees/_search
+{
+  "query": {
+    "match_phrase": {
+      "phrase": {
+        "query": "roots heuristic coherent"
+      }
+    }
+  }
+}
+
+GET employees/_search
+{
+  "query": {
+    "match_phrase": {
+      "phrase": {
+        "query": "roots coherent",
+        "slop": 1
+      }
+    }
+  }
+}
+
+# Insert document to better understand match_phrase_prefix query
+PUT employees/_doc/5
+{
+  "id": 4,
+  "name": "Jennifer Lawrence",
+  "email": "jlaw@example.com",
+  "gender": "female",
+  "ip_address": "100.37.110.59",
+  "date_of_birth": "17/05/1995",
+  "company": "Monsnto",
+  "position": "Resources Manager",
+  "experience": 10,
+  "country": "Germany",
+  "phrase": "Emulation of roots heuristic complete systems",
+  "salary": 300000
+}
+
+GET employees/_search
+{
+  "_source": [
+    "phrase"
+  ],
+  "query": {
+    "match_phrase_prefix": {
+      "phrase": {
+        "query": "roots heuristic co"
+      }
+    }
+  }
+}
+
+DELETE employees/_doc/5
+
+# Term Level Queries
+POST employees/_search
+{
+  "query": {
+    "terms": {
+      "gender": [
+        "female",
+        "male"
+      ]
+    }
+  }
+}
+
+POST employees/_search
+{
+  "query": {
+    "terms": {
+      "gender": [
+        "female",
+        "Male"
+      ]
+    }
+  }
+}
+
+PUT employees/_doc/5
+{
+  "id": 5,
+  "name": "Michael Bordon",
+  "email": "mbordon@example.com",
+  "gender": "male",
+  "ip_address": "10.47.210.65",
+  "date_of_birth": "12/12/1995",
+  "position": "Resources Manager",
+  "experience": 12,
+  "country": null,
+  "phrase": "Emulation of roots heuristic coherent systems",
+  "salary": 300000
+}
+
+GET employees/_search
+{
+  "query": {
+    "exists": {
+      "field": "company"
+    }
+  }
+}
+
+GET employees/_search
+{
+  "query": {
+    "bool": {
+      "must_not": [
+        {
+          "exists": {
+            "field": "company"
+          }
+        }
+      ]
+    }
+  }
+}
+
+DELETE employees/_doc/5
+
+POST employees/_search
+{
+  "query": {
+    "range": {
+      "experience": {
+        "gte": 5,
+        "lte": 10
+      }
+    }
+  }
+}
+
+GET employees/_search
+{
+  "query": {
+    "range": {
+      "date_of_birth": {
+        "gte": "01/01/1986"
+      }
+    }
+  }
+}
+
+POST employees/_search
+{
+  "query": {
+    "ids": {
+      "values": [
+        "1",
+        "4"
+      ]
+    }
+  }
+}
+
+GET employees/_search
+{
+  "query": {
+    "prefix": {
+      "name": "al"
+    }
+  }
+}
+
+GET employees/_search
+{
+  "query": {
+    "prefix": {
+      "name": "AL"
+    }
+  }
+}
+
+GET employees/_search
+{
+  "query": {
+    "wildcard": {
+      "country": {
+        "value": "c*a"
+      }
+    }
+  }
+}
+
+GET employees/_search
+{
+  "query": {
+    "regexp": {
+      "position": "res[a-z]*"
+    }
+  }
+}
+
+GET employees/_search
+{
+  "query": {
+    "fuzzy": {
+      "country": {
+        "value": "Chnia",
+        "fuzziness": "2"
+      }
+    }
+  }
+}
+
+POST employees/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "heursitic reserch",
+      "fields": [
+        "phrase",
+        "position"
+      ],
+      "fuzziness": 2
+    }
+  },
+  "size": 10
+}
+
+# Boosting
+POST employees/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "versatile Engineer",
+      "fields": [
+        "position",
+        "phrase"
+      ]
+    }
+  }
+}
+
+POST employees/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "versatile Engineer",
+      "fields": [
+        "position^3",
+        "phrase"
+      ]
+    }
+  }
+}
+
+POST employees/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "versatile engineer",
+      "fields": [
+        "position^3",
+        "phrase"
+      ]
+    }
+  }
+}
+
+# Sorting
+# Match vs Filter scoring
+POST employees/_search
+{
+  "query": {
+    "match": {
+      "country": "China"
+    }
+  }
+}
+
+POST employees/_search
+{
+  "query": {
+    "bool": {
+      "filter": {
+        "match": {
+          "country": "China"
+        }
+      }
+    }
+  }
+}
+
+# Sort by a field
+GET employees/_search
+{
+  "_source": [
+    "name",
+    "experience",
+    "salary"
+  ],
+  "sort": [
+    {
+      "experience": {
+        "order": "desc"
+      }
+    }
+  ]
+}
